@@ -1,5 +1,5 @@
 //const API = "https://slotly-usly.onrender.com";
-const API = "http://localhost:8000";
+const API = "http://138.252.100.152:8000";
 
 
 // ==========================================================
