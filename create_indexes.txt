@@ -1,0 +1,89 @@
+-- ============================================================
+-- SLOTLY PERFORMANCE INDEXES
+-- PostgreSQL
+-- ============================================================
+
+-- APPOINTMENTS
+-- Used heavily during slot-capacity validation
+CREATE INDEX IF NOT EXISTS idx_appointments_branch_date_start
+ON appointments (branch_id, appointment_date, start_time);
+
+-- Used for "My Appointments"
+CREATE INDEX IF NOT EXISTS idx_appointments_user_date
+ON appointments (user_id, appointment_date);
+
+-- Useful when filtering appointments by branch/date/status
+CREATE INDEX IF NOT EXISTS idx_appointments_branch_date_status
+ON appointments (branch_id, appointment_date, status);
+
+
+-- BRANCH SLOTS
+-- UniqueConstraint already indexes:
+-- (branch_id, slot_date, start_time)
+--
+-- This additional index helps queries filtering branch + date
+-- without needing start_time.
+CREATE INDEX IF NOT EXISTS idx_branch_slots_branch_date
+ON branch_slots (branch_id, slot_date);
+
+
+-- USER SESSIONS
+-- phone_number is already UNIQUE, so PostgreSQL already has
+-- a unique index. No additional index needed.
+
+
+-- USERS
+-- phone_number is already UNIQUE, so PostgreSQL already has
+-- an index.
+--
+-- If your queries frequently filter business_id + is_active,
+-- this composite index can help:
+CREATE INDEX IF NOT EXISTS idx_users_business_active
+ON users (business_id, is_active);
+
+
+-- FLOW SESSIONS
+-- session_id is already UNIQUE + indexed.
+--
+-- Useful for finding an incomplete session for a phone:
+CREATE INDEX IF NOT EXISTS idx_flow_sessions_phone_completed
+ON flow_sessions (phone_number, completed);
+
+
+-- BRANCH WORKING HOURS
+-- (branch_id, weekday) already has a UNIQUE constraint,
+-- therefore no additional index is required.
+
+
+-- SERVICES
+-- Useful when listing active services for a business:
+CREATE INDEX IF NOT EXISTS idx_services_business_active
+ON services (business_id, is_active);
+
+
+-- ADMINS
+-- Useful for finding an active admin with an FCM token.
+CREATE INDEX IF NOT EXISTS idx_admins_active
+ON admins (is_active);
+
+
+-- ============================================================
+-- VERIFY
+-- ============================================================
+
+SELECT
+    tablename,
+    indexname,
+    indexdef
+FROM pg_indexes
+WHERE tablename IN (
+    'appointments',
+    'branch_slots',
+    'users',
+    'user_sessions',
+    'flow_sessions',
+    'branch_working_hours',
+    'services',
+    'admins'
+)
+ORDER BY tablename, indexname;

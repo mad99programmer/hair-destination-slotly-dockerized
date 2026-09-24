@@ -1,0 +1,2118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Hair Destination — Appointments</title>
+
+
+    <!-- Fonts -->
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
+        rel="stylesheet"
+    >
+
+
+    <!-- Tailwind -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+
+    <!-- AUTH -->
+
+    <script src="/admin/js/auth.js"></script>
+
+
+    <script>
+
+        tailwind.config = {
+
+            theme: {
+
+                extend: {
+
+                    colors: {
+
+                        plum: {
+                            50: "#f0fdfa",
+                            100: "#ccfbf1",
+                            200: "#99f6e4",
+                            400: "#2dd4bf",
+                            600: "#0d9488",
+                            700: "#0f766e",
+                            900: "#134e4a"
+                        },
+
+                        rose: {
+                            50: "#fff1f2",
+                            100: "#ffe4e6",
+                            400: "#fb7185",
+                            500: "#f43f5e",
+                            600: "#e11d48"
+                        }
+
+                    },
+
+                    fontFamily: {
+
+                        display: [
+                            "Playfair Display",
+                            "serif"
+                        ],
+
+                        sans: [
+                            "Inter",
+                            "sans-serif"
+                        ]
+
+                    }
+
+                }
+
+            }
+
+        };
+
+    </script>
+
+
+    <style>
+
+        body {
+            font-family: "Inter", sans-serif;
+        }
+
+        .font-display {
+            font-family: "Playfair Display", serif;
+        }
+
+        #sidebar {
+            transition: transform .25s ease;
+        }
+
+        @media (max-width: 767px) {
+
+            #sidebar {
+                transform: translateX(-100%);
+            }
+
+            #sidebar.open {
+                transform: translateX(0);
+            }
+
+        }
+
+    
+/* ==========================================================
+   MOBILE RESPONSIVE ENHANCEMENTS
+   ========================================================== */
+
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+button, input, select, textarea {
+    font-size: 16px; /* prevents iOS Safari auto-zoom */
+}
+
+@media (max-width: 767px) {
+
+    /* General spacing */
+    main {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Mobile sidebar */
+    #sidebar {
+        width: min(82vw, 320px);
+    }
+
+    /* Top bar */
+    header {
+        min-height: 64px;
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+
+    header h1 {
+        font-size: 18px !important;
+    }
+
+    /* Main content */
+    main {
+        padding: 14px !important;
+    }
+
+    /* Cards */
+    .rounded-3xl {
+        border-radius: 20px;
+    }
+
+    /* Dashboard greeting */
+    #greeting {
+        font-size: 28px !important;
+        line-height: 1.15;
+    }
+
+    /* Dashboard stat cards */
+    .card-hover {
+        min-width: 0;
+    }
+
+    /* Filters */
+    #status,
+    #from-date,
+    #to-date,
+    #search-input {
+        min-height: 46px;
+    }
+
+    /* Tables: keep data readable and allow deliberate horizontal scroll */
+    table {
+        white-space: nowrap;
+    }
+
+    /* Appointment rows / table container */
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+    }
+
+    /* Better touch targets */
+    button,
+    a {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+        min-height: 44px;
+    }
+
+    /* Avoid decorative artwork taking over small screens */
+    .scissor-icon.absolute {
+        opacity: 0.5;
+        transform: scale(.7);
+    }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+    main {
+        padding: 10px !important;
+    }
+
+    .p-6 {
+        padding: 16px !important;
+    }
+
+    .p-8 {
+        padding: 18px !important;
+    }
+
+    #greeting {
+        font-size: 25px !important;
+    }
+}
+
+/* Appointment cards (mobile / tablet-narrow) */
+.appt-card + .appt-card {
+    border-top: 1px solid rgb(241 245 249);
+}
+
+</style>
+
+</head>
+
+
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+
+
+<div class="flex min-h-screen">
+
+
+    <!-- =====================================================
+         MOBILE BACKDROP
+    ====================================================== -->
+
+    <div
+        id="backdrop"
+        onclick="closeSidebar()"
+        class="hidden fixed inset-0 bg-slate-900/40 z-30 md:hidden"
+    ></div>
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside
+        id="sidebar"
+        class="fixed md:static inset-y-0 left-0 z-40
+               w-72 md:w-64 bg-white border-r
+               border-slate-200 flex flex-col shrink-0"
+    >
+
+
+        <!-- BRAND -->
+
+        <div
+            class="flex items-center gap-3 px-6 py-6
+                   border-b border-slate-100"
+        >
+
+            <div
+                class="w-9 h-9 rounded-lg bg-plum-700
+                       flex items-center justify-center
+                       text-white font-bold"
+            >
+                ✂
+            </div>
+
+
+            <div>
+
+                <p
+                    class="font-display text-base
+                           leading-tight text-slate-900"
+                >
+                    Hair Destination
+                </p>
+
+                <p
+                    class="text-[11px] uppercase
+                           tracking-wider text-slate-400
+                           font-semibold"
+                >
+                    Admin Panel
+                </p>
+
+            </div>
+
+
+            <button
+                onclick="closeSidebar()"
+                class="ml-auto md:hidden text-slate-400
+                       text-xl"
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+        <!-- NAVIGATION -->
+
+        <nav
+            class="flex-1 px-3 mt-4 space-y-1"
+        >
+
+            <p
+                class="px-3 text-[10px] uppercase
+                       tracking-wider text-slate-400
+                       font-bold mb-2"
+            >
+                Menu
+            </p>
+
+
+            <a
+                href="/admin/dashboard/"
+                class="flex items-center gap-3 px-3 py-2.5
+                       rounded-xl text-slate-600
+                       hover:bg-slate-50
+                       font-medium text-sm"
+            >
+
+                <span>▣</span>
+
+                Dashboard
+
+            </a>
+
+
+            <a
+                href="/admin/appointments/"
+                class="flex items-center gap-3 px-3 py-2.5
+                       rounded-xl bg-plum-50
+                       text-plum-700 font-semibold text-sm
+                       border border-plum-100"
+            >
+
+                <span>▣</span>
+
+                Appointments
+
+            </a>
+
+        </nav>
+
+
+        <!-- ADMIN -->
+
+        <div
+            class="px-3 pb-4 pt-3
+                   border-t border-slate-100"
+        >
+
+            <div
+                class="flex items-center gap-3
+                       px-2 py-2 rounded-xl"
+            >
+
+                <div
+                    class="w-9 h-9 rounded-full
+                           bg-plum-700
+                           flex items-center justify-center
+                           text-sm font-bold text-white"
+                >
+                    A
+                </div>
+
+
+                <div class="leading-tight">
+
+                    <p
+                        class="text-sm font-semibold
+                               text-slate-900"
+                    >
+                        Admin
+                    </p>
+
+                    <p
+                        class="text-[11px] text-slate-400"
+                    >
+                        Salon Manager
+                    </p>
+
+                </div>
+
+
+                <button
+                    onclick="logout()"
+                    class="ml-auto text-slate-400
+                           hover:text-red-500"
+                    title="Logout"
+                >
+                    ⇥
+                </button>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN
+    ====================================================== -->
+
+    <div class="flex-1 min-w-0">
+
+
+        <!-- TOP BAR -->
+
+        <header
+            class="bg-white border-b border-slate-200
+                   px-4 sm:px-8 py-4
+                   flex items-center gap-4
+                   sticky top-0 z-20"
+        >
+
+            <button
+                onclick="openSidebar()"
+                class="md:hidden text-slate-600 text-xl"
+            >
+                ☰
+            </button>
+
+
+            <div class="flex-1">
+
+                <h1
+                    class="font-display text-xl
+                           font-bold text-slate-900"
+                >
+                    Appointments
+                </h1>
+
+            </div>
+
+
+            <button
+                onclick="loadAppointments()"
+                class="flex items-center gap-2
+                       bg-plum-700 hover:bg-plum-900
+                       text-white px-5 py-2.5
+                       rounded-xl text-sm
+                       font-semibold"
+            >
+
+                ↻
+
+                <span class="hidden sm:inline">
+                    Refresh
+                </span>
+
+            </button>
+
+        </header>
+
+
+        <!-- =================================================
+             CONTENT
+        ================================================== -->
+
+        <main
+            class="p-4 sm:p-6 lg:p-8
+                   max-w-7xl mx-auto"
+        >
+
+
+            <!-- COUNT -->
+
+            <div class="flex items-center justify-between mb-6">
+
+                <p
+                    id="showing"
+                    class="text-sm font-medium
+                           text-slate-400
+                           bg-slate-100
+                           px-3 py-1.5
+                           rounded-full"
+                >
+                    Loading...
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 SEARCH (frontend-only, filters the already-
+                 loaded appointments array — no API call)
+            ================================================== -->
+
+            <div
+                class="bg-white border border-slate-100
+                       rounded-2xl p-4 sm:p-5 mb-6 shadow-sm"
+            >
+
+                <div class="relative">
+
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
+                        </svg>
+                    </div>
+
+                    <input
+                        id="search-input"
+                        type="text"
+                        placeholder="Search by name, phone, service or branch..."
+                        class="w-full border
+                               border-slate-200
+                               rounded-xl py-3 pl-11 pr-4
+                               text-sm bg-white
+                               focus:outline-none
+                               focus:ring-2
+                               focus:ring-plum-400
+                               focus:border-transparent"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 FILTERS
+            ================================================== -->
+
+            <div
+                class="bg-white border border-slate-100
+                       rounded-2xl p-6 mb-6 shadow-sm"
+            >
+
+                <div
+                    class="grid grid-cols-1
+                           sm:grid-cols-2
+                           lg:grid-cols-4 gap-5"
+                >
+
+
+                    <!-- STATUS -->
+
+                    <div>
+
+                        <label
+                            class="block text-xs font-bold
+                                   text-slate-500 uppercase
+                                   tracking-wider mb-2"
+                        >
+                            Status
+                        </label>
+
+
+                        <select
+                            id="status"
+                            onchange="loadAppointments()"
+                            class="w-full border
+                                   border-slate-200
+                                   rounded-xl py-3 px-4
+                                   text-sm bg-white"
+                        >
+
+                            <option value="">
+                                All Statuses
+                            </option>
+
+                            <option value="booked">
+                                Booked
+                            </option>
+
+                            <option value="cancelled">
+                                Cancelled
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- FROM DATE -->
+
+                    <div>
+
+                        <label
+                            class="block text-xs font-bold
+                                   text-slate-500 uppercase
+                                   tracking-wider mb-2"
+                        >
+                            From Date
+                        </label>
+
+
+                        <input
+                            id="from-date"
+                            type="date"
+                            onchange="loadAppointments()"
+                            class="w-full border
+                                   border-slate-200
+                                   rounded-xl py-3 px-4
+                                   text-sm"
+                        >
+
+                    </div>
+
+
+                    <!-- TO DATE -->
+
+                    <div>
+
+                        <label
+                            class="block text-xs font-bold
+                                   text-slate-500 uppercase
+                                   tracking-wider mb-2"
+                        >
+                            To Date
+                        </label>
+
+
+                        <input
+                            id="to-date"
+                            type="date"
+                            onchange="loadAppointments()"
+                            class="w-full border
+                                   border-slate-200
+                                   rounded-xl py-3 px-4
+                                   text-sm"
+                        >
+
+                    </div>
+
+
+                    <!-- RESET -->
+
+                    <div class="flex items-end">
+
+                        <button
+                            onclick="resetFilters()"
+                            class="w-full border
+                                   border-slate-200
+                                   bg-white
+                                   hover:bg-slate-50
+                                   text-slate-600
+                                   py-3 rounded-xl
+                                   text-sm font-semibold"
+                        >
+                            Reset Filters
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 APPOINTMENTS: DESKTOP TABLE / MOBILE CARDS
+            ================================================== -->
+
+            <div
+                class="bg-white border
+                       border-slate-100
+                       rounded-3xl
+                       overflow-hidden shadow-sm"
+            >
+
+                <!-- Desktop / tablet: table (md and up) -->
+                <div class="hidden md:block overflow-x-auto rounded-b-3xl">
+
+                    <table
+                        class="w-full text-sm
+                               min-w-[1000px]"
+                    >
+
+                        <thead>
+
+                            <tr
+                                class="bg-slate-50
+                                       border-b
+                                       border-slate-100"
+                            >
+
+                                <th
+                                    class="text-left p-5
+                                           font-semibold
+                                           text-xs
+                                           text-slate-400
+                                           uppercase"
+                                >
+                                    Customer
+                                </th>
+
+
+                                <th
+                                    class="text-left p-5
+                                           font-semibold
+                                           text-xs
+                                           text-slate-400
+                                           uppercase"
+                                >
+                                    Phone
+                                </th>
+
+
+                                <th
+                                    class="text-left p-5
+                                           font-semibold
+                                           text-xs
+                                           text-slate-400
+                                           uppercase"
+                                >
+                                    Service
+                                </th>
+
+
+                                <th
+                                    class="text-left p-5
+                                           font-semibold
+                                           text-xs
+                                           text-slate-400
+                                           uppercase"
+                                >
+                                    Branch
+                                </th>
+
+
+                                <th
+                                    class="text-left p-5
+                                           font-semibold
+                                           text-xs
+                                           text-slate-400
+                                           uppercase"
+                                >
+                                    Date
+                                </th>
+
+
+                                <th
+                                    class="text-left p-5
+                                           font-semibold
+                                           text-xs
+                                           text-slate-400
+                                           uppercase"
+                                >
+                                    Time
+                                </th>
+
+
+                                <th
+                                    class="text-left p-5
+                                           font-semibold
+                                           text-xs
+                                           text-slate-400
+                                           uppercase"
+                                >
+                                    Status
+                                </th>
+
+
+                                <th
+                                    class="text-left p-5
+                                           font-semibold
+                                           text-xs
+                                           text-slate-400
+                                           uppercase"
+                                >
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="appointments-body">
+
+                            <tr>
+
+                                <td
+                                    colspan="8"
+                                    class="p-12
+                                           text-center
+                                           text-slate-400"
+                                >
+                                    Loading appointments...
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- Mobile: cards (below md) -->
+                <div id="appointments-cards" class="md:hidden">
+
+                    <div class="appt-card p-8 text-center text-slate-400">
+                        Loading appointments...
+                    </div>
+
+                </div>
+
+
+                <!-- EMPTY -->
+
+                <div
+                    id="empty"
+                    class="hidden p-12 text-center"
+                >
+
+                    <div class="text-4xl">
+                        📭
+                    </div>
+
+                    <p
+                        class="text-slate-500
+                               mt-3"
+                    >
+                        No appointments found.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+        </main>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     CONFIRM MODAL
+     (used instead of window.confirm() — most Android
+     WebView wrappers don't implement the native JS
+     dialog callback, so confirm()/alert() silently do
+     nothing there)
+====================================================== -->
+
+<div
+    id="confirm-modal"
+    class="hidden fixed inset-0 z-50 flex items-center justify-center p-4"
+>
+
+    <div
+        id="confirm-modal-backdrop"
+        class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+    ></div>
+
+    <div
+        class="relative bg-white rounded-3xl shadow-xl border
+               border-slate-100 max-w-sm w-full p-6"
+    >
+
+        <h3 class="font-display text-lg font-bold text-slate-900">
+            Cancel appointment?
+        </h3>
+
+        <p id="confirm-modal-message" class="text-sm text-slate-500 mt-2">
+            This cannot be undone.
+        </p>
+
+        <div class="mt-6 flex gap-3">
+
+            <button
+                id="confirm-modal-dismiss"
+                type="button"
+                class="flex-1 border border-slate-200 text-slate-600
+                       hover:bg-slate-50 py-2.5 rounded-xl text-sm
+                       font-semibold min-h-[44px]"
+            >
+                Keep appointment
+            </button>
+
+            <button
+                id="confirm-modal-confirm"
+                type="button"
+                class="flex-1 bg-rose-600 hover:bg-rose-700 text-white
+                       py-2.5 rounded-xl text-sm font-semibold min-h-[44px]"
+            >
+                Yes, cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     TOAST
+     (used instead of window.alert() for the same reason)
+====================================================== -->
+
+<div
+    id="toast"
+    class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50
+           max-w-[90vw] px-4 py-3 rounded-xl text-sm font-semibold
+           shadow-lg text-center"
+></div>
+
+
+<!-- ==========================================================
+     JAVASCRIPT
+========================================================== -->
+
+<script>
+
+
+// ==========================================================
+// SEARCH STATE
+//
+// Holds the appointments array most recently returned by the
+// existing /admin/appointments API call. The search box filters
+// THIS array in the browser only — it never triggers a new
+// request. Status / From Date / To Date still go through the
+// existing backend call in loadAppointments().
+// ==========================================================
+
+let allAppointments = [];
+let searchDebounceTimer = null;
+
+
+// ==========================================================
+// AUTH CHECK
+// ==========================================================
+
+if (!requireAuth()) {
+
+    throw new Error(
+        "Authentication required"
+    );
+
+}
+
+
+// ==========================================================
+// SIDEBAR
+// ==========================================================
+
+function openSidebar() {
+
+    document
+        .getElementById("sidebar")
+        .classList
+        .add("open");
+
+    document
+        .getElementById("backdrop")
+        .classList
+        .remove("hidden");
+
+}
+
+
+function closeSidebar() {
+
+    document
+        .getElementById("sidebar")
+        .classList
+        .remove("open");
+
+    document
+        .getElementById("backdrop")
+        .classList
+        .add("hidden");
+
+}
+
+
+// ==========================================================
+// STATUS BADGE
+// ==========================================================
+
+function statusBadge(status) {
+
+    if (status === "booked") {
+
+        return `
+            <span
+                class="inline-flex
+                       items-center
+                       px-3 py-1
+                       rounded-full
+                       bg-green-50
+                       text-green-700
+                       text-xs
+                       font-semibold"
+            >
+                Booked
+            </span>
+        `;
+    }
+
+
+    if (
+        status === "cancelled" ||
+        status === "canceled"
+    ) {
+
+        return `
+            <span
+                class="inline-flex
+                       items-center
+                       px-3 py-1
+                       rounded-full
+                       bg-red-50
+                       text-red-600
+                       text-xs
+                       font-semibold"
+            >
+                Cancelled
+            </span>
+        `;
+    }
+
+
+    return `
+        <span
+            class="inline-flex
+                   items-center
+                   px-3 py-1
+                   rounded-full
+                   bg-slate-100
+                   text-slate-600
+                   text-xs
+                   font-semibold"
+        >
+            ${status || "Unknown"}
+        </span>
+    `;
+}
+
+
+// ==========================================================
+// DATE FORMAT
+// ==========================================================
+
+function formatDate(dateString) {
+
+    if (!dateString) {
+
+        return "-";
+
+    }
+
+
+    const parts =
+        dateString.split("-");
+
+
+    if (parts.length !== 3) {
+
+        return dateString;
+
+    }
+
+
+    return (
+        parts[2]
+        + " "
+        + getMonthName(
+            Number(parts[1])
+        )
+        + " "
+        + parts[0]
+    );
+
+}
+
+
+function getMonthName(month) {
+
+    const months = [
+
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+
+    ];
+
+
+    return months[month - 1] || "";
+
+}
+
+
+// ==========================================================
+// ESCAPE HTML
+// ==========================================================
+
+function escapeHtml(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+
+        return "";
+
+    }
+
+
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+// ==========================================================
+// CANCEL ACTION MARKUP
+//
+// Only shown for appointments still in "booked" status; once
+// cancelled (or in any other terminal status) there's nothing
+// to action, so it's left blank rather than showing a disabled
+// button.
+// ==========================================================
+
+function cancelActionHtml(appointment, variant) {
+
+    if (appointment.status !== "booked") {
+
+        return variant === "table"
+            ? `<span class="text-slate-300 text-xs">—</span>`
+            : "";
+
+    }
+
+    const buttonClasses =
+        variant === "table"
+            ? `inline-flex items-center gap-1.5 border border-rose-200
+               text-rose-600 hover:bg-rose-50 active:scale-[0.98]
+               transition-colors text-xs font-semibold px-3 py-2
+               rounded-lg disabled:opacity-60 disabled:cursor-not-allowed`
+            : `mt-4 pt-4 border-t border-slate-100 w-full
+               inline-flex items-center justify-center gap-1.5
+               border border-rose-200 text-rose-600 hover:bg-rose-50
+               active:scale-[0.98] transition-colors text-xs
+               font-semibold px-3 py-2.5 rounded-lg
+               disabled:opacity-60 disabled:cursor-not-allowed`;
+
+    // Note: the border-t/pt-4 above double as the card's divider
+    // above the button, so no extra wrapper element is needed there.
+
+    return `
+        <button
+            type="button"
+            onclick="cancelAppointment(${appointment.id}, this)"
+            class="${buttonClasses}"
+        >
+            Cancel Appointment
+        </button>
+    `;
+
+}
+
+
+// ==========================================================
+// ROW MARKUP (DESKTOP TABLE)
+// ==========================================================
+
+function appointmentRowHtml(appointment) {
+
+    return `
+
+    <tr
+        class="border-b
+               border-slate-100
+               hover:bg-slate-50"
+    >
+
+
+        <!-- CUSTOMER -->
+
+        <td class="p-5">
+
+            <div
+                class="font-semibold
+                       text-slate-900"
+            >
+                ${escapeHtml(
+                    appointment.customer_name
+                )}
+            </div>
+
+        </td>
+
+
+        <!-- PHONE -->
+
+        <td
+            class="p-5
+                   text-slate-600"
+        >
+
+            ${escapeHtml(
+                appointment.customer_phone
+            )}
+
+        </td>
+
+
+        <!-- SERVICE -->
+
+        <td
+            class="p-5
+                   font-medium
+                   text-slate-800"
+        >
+
+            ${escapeHtml(
+                appointment.service_name
+            )}
+
+        </td>
+
+
+        <!-- BRANCH -->
+
+        <td
+            class="p-5
+                   text-slate-700"
+        >
+
+            ${escapeHtml(
+                appointment.branch_name
+            )}
+
+        </td>
+
+
+        <!-- DATE -->
+
+        <td
+            class="p-5
+                   text-slate-700"
+        >
+
+            ${formatDate(
+                appointment.date
+            )}
+
+        </td>
+
+
+        <!-- TIME -->
+
+        <td
+            class="p-5
+                   font-semibold
+                   text-slate-900"
+        >
+
+            ${escapeHtml(
+                appointment.time
+            )}
+
+        </td>
+
+
+        <!-- STATUS -->
+
+        <td class="p-5">
+
+            ${statusBadge(
+                appointment.status
+            )}
+
+        </td>
+
+
+        <!-- ACTIONS -->
+
+        <td class="p-5">
+
+            ${cancelActionHtml(appointment, "table")}
+
+        </td>
+
+
+    </tr>
+
+    `;
+
+}
+
+
+// ==========================================================
+// CARD MARKUP (MOBILE)
+//
+// Each appointment becomes a self-contained card so nothing
+// gets clipped or needs horizontal scrolling on a phone.
+// Shows the same fields as the desktop table: customer,
+// phone, service, branch, date, time, status, plus a Cancel
+// action when the appointment is still booked.
+// ==========================================================
+
+function appointmentCardHtml(appointment) {
+
+    return `
+
+    <div class="appt-card p-5">
+
+        <div class="flex items-start justify-between gap-3">
+
+            <div class="min-w-0">
+                <p class="font-semibold text-slate-900 break-words">
+                    ${escapeHtml(appointment.customer_name)}
+                </p>
+                <p class="text-xs text-slate-400 font-medium mt-0.5">
+                    ${escapeHtml(appointment.customer_phone)}
+                </p>
+            </div>
+
+            <div class="shrink-0">
+                ${statusBadge(appointment.status)}
+            </div>
+
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 gap-2 text-sm">
+
+            <div class="flex items-start gap-2 text-slate-700">
+                <span class="text-slate-400 shrink-0" aria-hidden="true">✂</span>
+                <span class="font-medium break-words">${escapeHtml(appointment.service_name)}</span>
+            </div>
+
+            <div class="flex items-start gap-2 text-slate-700">
+                <span class="text-slate-400 shrink-0" aria-hidden="true">📍</span>
+                <span class="break-words">${escapeHtml(appointment.branch_name)}</span>
+            </div>
+
+            <div class="flex items-start gap-2 text-slate-700">
+                <span class="text-slate-400 shrink-0" aria-hidden="true">📅</span>
+                <span>${formatDate(appointment.date)}</span>
+            </div>
+
+            <div class="flex items-start gap-2 text-slate-900 font-semibold">
+                <span class="text-slate-400 shrink-0 font-normal" aria-hidden="true">🕐</span>
+                <span>${escapeHtml(appointment.time)}</span>
+            </div>
+
+        </div>
+
+        ${cancelActionHtml(appointment, "card")}
+
+    </div>
+
+    `;
+
+}
+
+
+// ==========================================================
+// SEARCH: MATCH A SINGLE APPOINTMENT
+//
+// Case-insensitive partial match against customer_name,
+// customer_phone, service_name, branch_name. Null/undefined
+// fields are treated as empty strings.
+// ==========================================================
+
+function matchesSearch(appointment, term) {
+
+    if (!term) {
+
+        return true;
+
+    }
+
+
+    const haystacks = [
+        appointment.customer_name,
+        appointment.customer_phone,
+        appointment.service_name,
+        appointment.branch_name
+    ];
+
+
+    return haystacks.some(function (value) {
+
+        return String(value || "")
+            .toLowerCase()
+            .includes(term);
+
+    });
+
+}
+
+
+// ==========================================================
+// RENDER (SEARCH-FILTERED)
+//
+// Applies the frontend-only search filter to whatever is
+// currently in `allAppointments` (already fetched from the
+// existing API with the current status/date filters applied),
+// then renders using the existing appointmentRowHtml() /
+// appointmentCardHtml() functions. Updates the "X appointment(s)"
+// counter and the existing empty-state UI. No API call here.
+// ==========================================================
+
+function renderAppointments() {
+
+    const body =
+        document.getElementById(
+            "appointments-body"
+        );
+
+    const cards =
+        document.getElementById(
+            "appointments-cards"
+        );
+
+    const empty =
+        document.getElementById(
+            "empty"
+        );
+
+    const showing =
+        document.getElementById(
+            "showing"
+        );
+
+
+    const searchInput =
+        document.getElementById(
+            "search-input"
+        );
+
+    const term = searchInput
+        ? searchInput.value.trim().toLowerCase()
+        : "";
+
+
+    const filteredAppointments =
+        allAppointments.filter(function (appointment) {
+
+            return matchesSearch(
+                appointment,
+                term
+            );
+
+        });
+
+
+    showing.textContent =
+        `${filteredAppointments.length} appointment(s)`;
+
+
+    if (filteredAppointments.length === 0) {
+
+        body.innerHTML = "";
+        cards.innerHTML = "";
+
+        empty.classList.remove(
+            "hidden"
+        );
+
+        return;
+
+    }
+
+
+    empty.classList.add(
+        "hidden"
+    );
+
+
+    body.innerHTML =
+        filteredAppointments
+            .map(appointmentRowHtml)
+            .join("");
+
+    cards.innerHTML =
+        filteredAppointments
+            .map(appointmentCardHtml)
+            .join("");
+
+}
+
+
+// ==========================================================
+// LOAD APPOINTMENTS
+// ==========================================================
+
+async function loadAppointments() {
+
+    const body =
+        document.getElementById(
+            "appointments-body"
+        );
+
+    const cards =
+        document.getElementById(
+            "appointments-cards"
+        );
+
+    const empty =
+        document.getElementById(
+            "empty"
+        );
+
+    const showing =
+        document.getElementById(
+            "showing"
+        );
+
+
+    empty.classList.add(
+        "hidden"
+    );
+
+
+    body.innerHTML = `
+
+        <tr>
+
+            <td
+                colspan="8"
+                class="p-12
+                       text-center
+                       text-slate-400"
+            >
+
+                <div
+                    class="flex
+                           justify-center
+                           items-center
+                           gap-2"
+                >
+
+                    <svg
+                        class="w-5 h-5
+                               animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                    >
+
+                        <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                        ></circle>
+
+                        <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373
+                               0 0 5.373 0 12h4z"
+                        ></path>
+
+                    </svg>
+
+                    Loading appointments...
+
+                </div>
+
+            </td>
+
+        </tr>
+
+    `;
+
+    cards.innerHTML = `
+
+        <div class="appt-card p-8 text-center text-slate-400">
+
+            <div class="flex justify-center items-center gap-2">
+
+                <svg
+                    class="w-5 h-5 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                >
+                    <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                    ></circle>
+                    <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373
+                           0 0 5.373 0 12h4z"
+                    ></path>
+                </svg>
+
+                <span>Loading appointments...</span>
+
+            </div>
+
+        </div>
+
+    `;
+
+
+    try {
+
+
+        // ==================================================
+        // FILTERS
+        // ==================================================
+
+        const params =
+            new URLSearchParams();
+
+
+        const status =
+            document
+                .getElementById("status")
+                .value;
+
+
+        const fromDate =
+            document
+                .getElementById("from-date")
+                .value;
+
+
+        const toDate =
+            document
+                .getElementById("to-date")
+                .value;
+
+
+        if (status) {
+
+            params.set(
+                "status",
+                status
+            );
+
+        }
+
+
+        if (fromDate) {
+
+            params.set(
+                "from_date",
+                fromDate
+            );
+
+        }
+
+
+        if (toDate) {
+
+            params.set(
+                "to_date",
+                toDate
+            );
+
+        }
+
+
+        const query =
+            params.toString();
+
+
+        const url =
+            query
+                ? `/admin/appointments?${query}`
+                : `/admin/appointments`;
+
+
+        console.log(
+            "Fetching appointments:",
+            url
+        );
+
+
+        // ==================================================
+        // API CALL
+        // ==================================================
+
+        const appointments =
+            await apiGet(url);
+
+
+        console.log(
+            "Appointments response:",
+            appointments
+        );
+
+
+        if (!appointments) {
+
+            return;
+
+        }
+
+
+        // ==================================================
+        // VALIDATE RESPONSE
+        // ==================================================
+
+        if (!Array.isArray(appointments)) {
+
+            throw new Error(
+                "API did not return an array."
+            );
+
+        }
+
+
+        // ==================================================
+        // STORE + RENDER (SEARCH-FILTERED)
+        //
+        // Keep the full array from this API call, then let
+        // renderAppointments() apply the current search box
+        // value on top of it and draw the count / empty state /
+        // table rows / cards. Typing in search re-runs only
+        // renderAppointments() — never this API call.
+        // ==================================================
+
+        allAppointments = appointments;
+
+        renderAppointments();
+
+
+    }
+
+    catch (error) {
+
+
+        console.error(
+            "Appointments loading error:",
+            error
+        );
+
+
+        allAppointments = [];
+
+        showing.textContent =
+            "Unable to load";
+
+
+        body.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="8"
+                    class="p-12
+                           text-center"
+                >
+
+                    <div
+                        class="text-red-500
+                               font-semibold
+                               mb-2"
+                    >
+                        Failed to load appointments
+                    </div>
+
+                    <div
+                        class="text-sm
+                               text-slate-400"
+                    >
+                        ${escapeHtml(
+                            error.message
+                        )}
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `;
+
+        cards.innerHTML = `
+
+            <div class="appt-card p-8 text-center">
+
+                <div class="text-red-500 font-semibold mb-2">
+                    Failed to load appointments
+                </div>
+
+                <div class="text-sm text-slate-400">
+                    ${escapeHtml(error.message)}
+                </div>
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+// ==========================================================
+// RESET FILTERS
+// ==========================================================
+
+function resetFilters() {
+
+    document
+        .getElementById("status")
+        .value = "";
+
+
+    document
+        .getElementById("from-date")
+        .value = "";
+
+
+    document
+        .getElementById("to-date")
+        .value = "";
+
+
+    const searchInput =
+        document.getElementById(
+            "search-input"
+        );
+
+    if (searchInput) {
+
+        searchInput.value = "";
+
+    }
+
+
+    loadAppointments();
+
+}
+
+
+// ==========================================================
+// CONFIRM MODAL (in-page, not window.confirm())
+//
+// window.confirm() relies on the host app's WebChromeClient
+// implementing onJsConfirm(); most Android WebView wrappers
+// don't, so it silently resolves to false with no dialog
+// ever shown. This renders the same yes/no choice as normal
+// page content instead, so it always works.
+//
+// Returns a Promise<boolean> — true if "Yes, cancel" was
+// clicked, false for "Keep appointment" or tapping the
+// backdrop.
+// ==========================================================
+
+function showConfirmDialog(message) {
+
+    return new Promise(function (resolve) {
+
+        const modal =
+            document.getElementById("confirm-modal");
+
+        const messageEl =
+            document.getElementById("confirm-modal-message");
+
+        const dismissBtn =
+            document.getElementById("confirm-modal-dismiss");
+
+        const confirmBtn =
+            document.getElementById("confirm-modal-confirm");
+
+        const backdrop =
+            document.getElementById("confirm-modal-backdrop");
+
+
+        messageEl.textContent = message;
+
+        modal.classList.remove("hidden");
+
+
+        function cleanup(result) {
+
+            modal.classList.add("hidden");
+
+            dismissBtn.removeEventListener("click", onDismiss);
+            confirmBtn.removeEventListener("click", onConfirm);
+            backdrop.removeEventListener("click", onDismiss);
+
+            resolve(result);
+
+        }
+
+
+        function onDismiss() {
+
+            cleanup(false);
+
+        }
+
+
+        function onConfirm() {
+
+            cleanup(true);
+
+        }
+
+
+        dismissBtn.addEventListener("click", onDismiss);
+        confirmBtn.addEventListener("click", onConfirm);
+        backdrop.addEventListener("click", onDismiss);
+
+    });
+
+}
+
+
+// ==========================================================
+// TOAST (in-page, not window.alert())
+//
+// Same reasoning as the confirm modal above — alert() is
+// unreliable inside a WebView wrapper, so this shows a
+// small message at the bottom of the screen instead.
+// ==========================================================
+
+let toastHideTimer = null;
+
+function showToast(message, variant) {
+
+    const toast =
+        document.getElementById("toast");
+
+    toast.textContent = message;
+
+    const variantClasses =
+        variant === "error"
+            ? "bg-rose-600 text-white"
+            : "bg-slate-900 text-white";
+
+    toast.className =
+        "fixed bottom-5 left-1/2 -translate-x-1/2 z-50 " +
+        "max-w-[90vw] px-4 py-3 rounded-xl text-sm " +
+        "font-semibold shadow-lg text-center " +
+        variantClasses;
+
+    clearTimeout(toastHideTimer);
+
+    toastHideTimer = setTimeout(function () {
+
+        toast.classList.add("hidden");
+
+    }, 3500);
+
+}
+
+
+// ==========================================================
+// CANCEL APPOINTMENT
+//
+// Calls the existing backend endpoint:
+//   POST /admin/appointments/{appointment_id}/cancel
+//
+// Uses apiPost() — the natural POST counterpart to the
+// apiGet() this page already relies on for auth headers. If
+// auth.js doesn't expose apiPost() under that name, this is
+// the only line that needs to change.
+// ==========================================================
+
+async function cancelAppointment(appointmentId, triggerEl) {
+
+    const confirmed = await showConfirmDialog(
+        "Cancel this appointment? This cannot be undone."
+    );
+
+    if (!confirmed) {
+
+        return;
+
+    }
+
+
+    if (triggerEl) {
+
+        triggerEl.disabled = true;
+
+        triggerEl.textContent =
+            "Cancelling…";
+
+    }
+
+
+    try {
+
+        await apiPost(
+            `/admin/appointments/${appointmentId}/cancel`,
+            {}
+        );
+
+        showToast(
+            "Appointment cancelled.",
+            "success"
+        );
+
+        // Reload from the server so the table, cards, and count
+        // all reflect the new status — this also re-applies the
+        // current status/date filters and the search box.
+        await loadAppointments();
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Cancel appointment error:",
+            error
+        );
+
+        showToast(
+            `Failed to cancel appointment: ${error.message}`,
+            "error"
+        );
+
+        if (triggerEl) {
+
+            triggerEl.disabled = false;
+
+            triggerEl.textContent =
+                "Cancel Appointment";
+
+        }
+
+    }
+
+}
+
+
+// ==========================================================
+// SEARCH INPUT (DEBOUNCED, FRONTEND-ONLY)
+//
+// Filters the already-loaded `allAppointments` array via
+// renderAppointments(). Never calls loadAppointments() or the
+// API — typing only re-renders from data already in memory.
+// ==========================================================
+
+const searchInputEl =
+    document.getElementById(
+        "search-input"
+    );
+
+if (searchInputEl) {
+
+    searchInputEl.addEventListener(
+        "input",
+        function () {
+
+            clearTimeout(
+                searchDebounceTimer
+            );
+
+            searchDebounceTimer =
+                setTimeout(
+                    renderAppointments,
+                    300
+                );
+
+        }
+    );
+
+}
+
+
+// ==========================================================
+// LOAD ON PAGE OPEN
+// ==========================================================
+
+loadAppointments();
+
+
+</script>
+
+
+</body>
+
+</html>

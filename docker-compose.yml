@@ -1,0 +1,33 @@
+services:
+
+  api:
+    build: .
+    container_name: slotly-api
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./private.pem:/etc/secrets/private.pem:ro
+      - ./firebase-service-account.json:/etc/secrets/firebase-service-account.json:ro
+
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16
+    container_name: slotly-postgres
+
+    environment:
+      POSTGRES_USER: slotly_user
+      POSTGRES_PASSWORD: slotly_password
+      POSTGRES_DB: slotly
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

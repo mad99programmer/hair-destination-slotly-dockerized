@@ -1,0 +1,552 @@
+{
+  "version": "7.3",
+  "data_api_version": "3.0",
+
+  "routing_model": {
+    "BOOKING_DETAILS": [
+      "SESSION"
+    ],
+    "SESSION": [
+      "BOOKING_CONFIRMATION"
+    ],
+    "BOOKING_CONFIRMATION": [
+      "BOOKING_SUCCESS",
+      "BOOKING_FAILURE"
+    ],
+    "BOOKING_SUCCESS": [],
+    "BOOKING_FAILURE": []
+  },
+
+  "screens": [
+
+    {
+      "id": "BOOKING_DETAILS",
+      "title": "Book Appointment",
+
+      "data": {
+        "name": {
+          "type": "string",
+          "__example__": ""
+        },
+
+        "branches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "Powai"
+            },
+            {
+              "id": "2",
+              "title": "Malad"
+            }
+          ]
+        },
+
+        "services": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+          "__example__": [
+            {
+              "id": "1",
+              "title": "Consultation"
+            },
+            {
+              "id": "2",
+              "title": "Monthly Maintenance"
+            }
+          ]
+        },
+
+        "min_date": {
+          "type": "string",
+          "__example__": "2026-09-03"
+        },
+
+        "max_date": {
+          "type": "string",
+          "__example__": "2026-11-16"
+        }
+      },
+
+      "layout": {
+        "type": "SingleColumnLayout",
+
+        "children": [
+          {
+            "type": "Form",
+            "name": "booking_form",
+
+            "init-values": {
+              "name": "${data.name}"
+            },
+
+            "children": [
+              {
+                "type": "TextInput",
+                "label": "Name",
+                "name": "name",
+                "required": true
+              },
+
+              {
+                "type": "Dropdown",
+                "label": "Branch",
+                "name": "branch",
+                "data-source": "${data.branches}",
+                "required": true
+              },
+
+              {
+                "type": "Dropdown",
+                "label": "Service",
+                "name": "service",
+                "data-source": "${data.services}",
+                "required": true
+              },
+
+              {
+                "type": "DatePicker",
+                "label": "Appointment Date",
+                "name": "date",
+                "required": true,
+                "min-date": "${data.min_date}",
+                "max-date": "${data.max_date}"
+              },
+
+              {
+                "type": "Footer",
+                "label": "Check Availability",
+
+                "on-click-action": {
+                  "name": "data_exchange",
+
+                  "payload": {
+                    "name": "${form.name}",
+                    "branch_id": "${form.branch}",
+                    "service_id": "${form.service}",
+                    "date": "${form.date}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+
+    {
+      "id": "SESSION",
+      "title": "Select Time",
+
+      "data": {
+        "name": {
+          "type": "string",
+          "__example__": "Mitul Shelatkar"
+        },
+
+        "branch_id": {
+          "type": "string",
+          "__example__": "2"
+        },
+
+        "service_id": {
+          "type": "string",
+          "__example__": "5"
+        },
+
+        "branch": {
+          "type": "string",
+          "__example__": "Malad"
+        },
+
+        "service": {
+          "type": "string",
+          "__example__": "Consultation"
+        },
+
+        "date": {
+          "type": "string",
+          "__example__": "2026-09-29"
+        },
+
+        "available_slots": {
+          "type": "array",
+
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          },
+
+          "__example__": [
+            {
+              "id": "1000_1100",
+              "title": "10:00 AM - 11:00 AM"
+            },
+            {
+              "id": "1100_1200",
+              "title": "11:00 AM - 12:00 PM"
+            },
+            {
+              "id": "1200_1300",
+              "title": "12:00 PM - 01:00 PM"
+            }
+          ]
+        }
+      },
+
+      "layout": {
+        "type": "SingleColumnLayout",
+
+        "children": [
+          {
+            "type": "Form",
+            "name": "session_form",
+
+            "children": [
+              {
+                "type": "RadioButtonsGroup",
+                "label": "Available Slots",
+                "name": "selected_slot",
+                "data-source": "${data.available_slots}",
+                "required": true
+              },
+
+              {
+                "type": "Footer",
+                "label": "Continue",
+
+                "on-click-action": {
+                  "name": "navigate",
+
+                  "next": {
+                    "type": "screen",
+                    "name": "BOOKING_CONFIRMATION"
+                  },
+
+                  "payload": {
+                    "name": "${data.name}",
+                    "branch_id": "${data.branch_id}",
+                    "service_id": "${data.service_id}",
+                    "branch": "${data.branch}",
+                    "service": "${data.service}",
+                    "date": "${data.date}",
+                    "selected_slot": "${form.selected_slot}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+
+
+    {
+      "id": "BOOKING_CONFIRMATION",
+      "title": "Confirm Appointment",
+
+      "data": {
+        "name": {
+          "type": "string",
+          "__example__": "Mitul Shelatkar"
+        },
+
+        "branch_id": {
+          "type": "string",
+          "__example__": "2"
+        },
+
+        "service_id": {
+          "type": "string",
+          "__example__": "5"
+        },
+
+        "branch": {
+          "type": "string",
+          "__example__": "Malad"
+        },
+
+        "service": {
+          "type": "string",
+          "__example__": "Consultation"
+        },
+
+        "date": {
+          "type": "string",
+          "__example__": "2026-09-29"
+        },
+
+        "selected_slot": {
+          "type": "string",
+          "__example__": "1400_1500"
+        }
+      },
+
+      "layout": {
+        "type": "SingleColumnLayout",
+
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Confirm Appointment"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "Please review your appointment details before confirming."
+          },
+
+          {
+            "type": "TextBody",
+            "text": "👤 Name"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.name}"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "📍 Branch"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.branch}"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "💇 Service"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.service}"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "📅 Date"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.date}"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "🕒 Time"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.selected_slot}"
+          },
+
+          {
+            "type": "Footer",
+            "label": "Confirm Booking",
+
+            "on-click-action": {
+              "name": "data_exchange",
+
+              "payload": {
+                "name": "${data.name}",
+                "branch_id": "${data.branch_id}",
+                "service_id": "${data.service_id}",
+                "date": "${data.date}",
+                "selected_slot": "${data.selected_slot}"
+              }
+            }
+          }
+        ]
+      }
+    },
+
+
+    {
+      "id": "BOOKING_SUCCESS",
+      "title": "Booking Confirmed",
+      "terminal": true,
+      "success": true,
+
+      "data": {
+        "appointment_id": {
+          "type": "string",
+          "__example__": "123"
+        },
+
+        "date": {
+          "type": "string",
+          "__example__": "17 September 2026"
+        },
+
+        "time": {
+          "type": "string",
+          "__example__": "3:00 PM - 4:00 PM"
+        },
+
+        "branch": {
+          "type": "string",
+          "__example__": "Powai"
+        },
+
+        "service": {
+          "type": "string",
+          "__example__": "Haircut"
+        }
+      },
+
+      "layout": {
+        "type": "SingleColumnLayout",
+
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Booking Confirmed 🎉"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "Appointment ID"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.appointment_id}"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "📅 Date"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.date}"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "🕒 Time"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.time}"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "📍 Branch"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.branch}"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "💇 Service"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "${data.service}"
+          },
+
+          {
+            "type": "Footer",
+            "label": "Done",
+
+            "on-click-action": {
+              "name": "complete",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    },
+
+
+    {
+      "id": "BOOKING_FAILURE",
+      "title": "Booking Unavailable",
+      "terminal": true,
+      "success": false,
+
+      "data": {
+        "message": {
+          "type": "string",
+          "__example__": "Sorry, this slot has just been booked by someone else."
+        }
+      },
+
+      "layout": {
+        "type": "SingleColumnLayout",
+
+        "children": [
+          {
+            "type": "TextHeading",
+            "text": "Booking Unavailable"
+          },
+
+          {
+            "type": "TextBody",
+            "text": "Sorry, this slot has just been booked by someone else."
+          },
+
+          {
+            "type": "TextBody",
+            "text": "Please go back and select another available slot."
+          },
+
+          {
+            "type": "Footer",
+            "label": "Done",
+
+            "on-click-action": {
+              "name": "complete",
+              "payload": {}
+            }
+          }
+        ]
+      }
+    }
+
+  ]
+}
