@@ -181,11 +181,7 @@ async function login() {
             }
         }
 
-        if (window.SlotlyNative) {
-            window.location.href = "dashboard.html";
-        } else {
-            window.location.href = "/admin/dashboard/";
-        }
+        window.location.href = "/admin/dashboard/";
 
     }
 
