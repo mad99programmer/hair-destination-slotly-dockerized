@@ -1,5 +1,5 @@
 //const API = "https://slotly-usly.onrender.com";
-const API = "http://138.252.100.152:8000";
+const API = "https://hair-destination-slotly.duckdns.org";
 
 
 // ==========================================================
