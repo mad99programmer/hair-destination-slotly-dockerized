@@ -43,11 +43,37 @@ async function saveFcmToken(token) {
         );
     }
 }
+
+
+// ==========================================================
+// NATIVE FCM TOKEN BRIDGE
+// ==========================================================
+
+window.setNativeFcmToken = function(token) {
+
+    console.log(
+        "Native FCM token received"
+    );
+
+    if (!token) {
+
+        console.log(
+            "Native FCM token is empty"
+        );
+
+        return;
+    }
+
+    saveFcmToken(token);
+};
+
+
 // ==========================================================
 // TOKEN
 // ==========================================================
 
 function getToken() {
+
     return localStorage.getItem("token");
 }
 
@@ -168,20 +194,31 @@ async function login() {
             "token",
             data.access_token
         );
-        // Save FCM token after successful login
+
+
+        // ==================================================
+        // SAVE FCM TOKEN AFTER SUCCESSFUL LOGIN
+        // ==================================================
+
         if (
             window.SlotlyNative &&
             typeof window.SlotlyNative.getFcmToken === "function"
         ) {
+
             const fcmToken =
                 window.SlotlyNative.getFcmToken();
 
             if (fcmToken) {
-                saveFcmToken(fcmToken);
+
+                saveFcmToken(
+                    fcmToken
+                );
             }
         }
 
-        window.location.href = "/admin/dashboard/";
+
+        window.location.href =
+            "/admin/dashboard/";
 
     }
 
