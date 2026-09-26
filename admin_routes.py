@@ -13,7 +13,8 @@ from models import (
     Branch,
     Service,
     Appointment,
-    Admin
+    Admin,
+    BranchWorkingHours
 )
 from datetime import date, datetime, time, timedelta
 from sqlalchemy import func
