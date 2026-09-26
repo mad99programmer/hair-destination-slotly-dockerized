@@ -192,7 +192,7 @@ async def admin_appointments_page():
 
 @app.get("/admin/add-appointments/")
 async def admin_appointments_page():
-    return FileResponse("admin/add-appointments.html")
+    return FileResponse("admin/add-appointment.html")
 
 app.include_router(admin_router)
 app.include_router(auth_router)
