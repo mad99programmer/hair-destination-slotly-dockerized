@@ -680,40 +680,94 @@ def create_admin_appointment(
             detail="No chairs available for this time slot"
         )
 
+    
+
     # ------------------------------------------------------
     # FIND OR CREATE USER
     # ------------------------------------------------------
 
-    phone = payload.customer_phone.strip()
+    phone_input = payload.customer_phone.strip()
 
-    user = (
+
+    def normalize_phone(phone: str) -> str:
+        phone = phone.strip()
+
+        # Remove spaces, hyphens, brackets etc.
+        phone = (
+            phone.replace(" ", "")
+            .replace("-", "")
+            .replace("(", "")
+            .replace(")", "")
+        )
+
+        # India +91 formats
+        if phone.startswith("+91"):
+            phone = phone[3:]
+
+        elif phone.startswith("91") and len(phone) == 12:
+            phone = phone[2:]
+
+        return phone
+
+
+    normalized_phone = normalize_phone(phone_input)
+
+
+    # ------------------------------------------------------
+    # FIND EXISTING USER
+    # ------------------------------------------------------
+
+    users = (
         db.query(User)
         .filter(
-            User.phone_number == phone
+            User.business_id == branch.business_id
         )
-        .first()
+        .all()
     )
+
+    user = None
+
+    for existing_user in users:
+
+        existing_phone = normalize_phone(
+            existing_user.phone_number
+        )
+
+        if existing_phone == normalized_phone:
+            user = existing_user
+            break
+
+
+    # ------------------------------------------------------
+    # USER EXISTS
+    # ------------------------------------------------------
 
     if user:
 
-        # Update name if admin entered a newer name
-        if payload.customer_name.strip():
-            user.name = payload.customer_name.strip()
+        # IMPORTANT:
+        # Do NOT change user's existing name.
+        #
+        # WhatsApp registered name remains the master name.
+
+        pass
+
+
+    # ------------------------------------------------------
+    # USER DOES NOT EXIST
+    # ------------------------------------------------------
 
     else:
 
         user = User(
             business_id=branch.business_id,
-            phone_number=phone,
+            phone_number=normalized_phone,
             name=payload.customer_name.strip(),
             is_active=True
         )
 
         db.add(user)
 
-        # Get generated user.id
         db.flush()
-
     # ------------------------------------------------------
     # CREATE APPOINTMENT
     # ------------------------------------------------------
