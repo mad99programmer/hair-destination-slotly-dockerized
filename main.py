@@ -189,6 +189,11 @@ async def admin_dashboard_page():
 @app.get("/admin/appointments/")
 async def admin_appointments_page():
     return FileResponse("admin/appointments.html")
+
+@app.get("/admin/add-appointments/")
+async def admin_appointments_page():
+    return FileResponse("admin/add-appointments.html")
+
 app.include_router(admin_router)
 app.include_router(auth_router)
 app.mount("/admin", StaticFiles(directory="admin", html=True), name="admin")
