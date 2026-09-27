@@ -9,7 +9,11 @@ const API = "https://hair-destination-slotly.duckdns.org";
 async function saveFcmToken(token) {
 
     if (!token) {
-        console.log("FCM token is empty");
+
+        console.log(
+            "FCM token is empty"
+        );
+
         return;
     }
 
@@ -64,7 +68,16 @@ window.setNativeFcmToken = function(token) {
         return;
     }
 
-    saveFcmToken(token);
+    // Store the token until admin authentication
+    // is available.
+    window.nativeFcmToken = token;
+
+    // If admin is already logged in,
+    // save the token immediately.
+    if (getToken()) {
+
+        saveFcmToken(token);
+    }
 };
 
 
@@ -105,6 +118,7 @@ function requireAuth() {
 function authHeaders() {
 
     return {
+
         "Authorization":
             `Bearer ${getToken()}`
     };
@@ -190,6 +204,10 @@ async function login() {
         }
 
 
+        // ==================================================
+        // SAVE AUTH TOKEN
+        // ==================================================
+
         localStorage.setItem(
             "token",
             data.access_token
@@ -200,27 +218,54 @@ async function login() {
         // SAVE FCM TOKEN AFTER SUCCESSFUL LOGIN
         // ==================================================
 
+        // First use the token received from the
+        // native Android bridge.
+
+        let fcmToken =
+            window.nativeFcmToken;
+
+
+        // If it is not available yet, ask the
+        // native Android bridge directly.
+
         if (
+            !fcmToken &&
             window.SlotlyNative &&
             typeof window.SlotlyNative.getFcmToken === "function"
         ) {
 
-            const fcmToken =
+            fcmToken =
                 window.SlotlyNative.getFcmToken();
-
-            if (fcmToken) {
-
-                saveFcmToken(
-                    fcmToken
-                );
-            }
         }
 
+
+        if (fcmToken) {
+
+            console.log(
+                "Saving FCM token after successful login"
+            );
+
+            await saveFcmToken(
+                fcmToken
+            );
+
+        } else {
+
+            console.log(
+                "FCM token not available after login"
+            );
+        }
+
+
+        // ==================================================
+        // REDIRECT
+        // ==================================================
 
         window.location.href =
             "/admin/dashboard/";
 
     }
+
 
     catch (err) {
 
@@ -241,7 +286,8 @@ async function login() {
 
 async function apiGet(url) {
 
-    const token = getToken();
+    const token =
+        getToken();
 
     console.log(
         "GET:",
@@ -254,17 +300,18 @@ async function apiGet(url) {
     );
 
 
-    const response = await fetch(
-        `${API}${url}`,
-        {
-            method: "GET",
+    const response =
+        await fetch(
+            `${API}${url}`,
+            {
+                method: "GET",
 
-            headers: {
-                "Authorization":
-                    `Bearer ${token}`
+                headers: {
+                    "Authorization":
+                        `Bearer ${token}`
+                }
             }
-        }
-    );
+        );
 
 
     console.log(
@@ -299,22 +346,25 @@ async function apiGet(url) {
 
 async function apiPost(url, body) {
 
-    const response = await fetch(
-        `${API}${url}`,
-        {
-            method: "POST",
+    const response =
+        await fetch(
+            `${API}${url}`,
+            {
+                method: "POST",
 
-            headers: {
-                "Authorization":
-                    `Bearer ${getToken()}`,
+                headers: {
 
-                "Content-Type":
-                    "application/json"
-            },
+                    "Authorization":
+                        `Bearer ${getToken()}`,
 
-            body: JSON.stringify(body)
-        }
-    );
+                    "Content-Type":
+                        "application/json"
+                },
+
+                body:
+                    JSON.stringify(body)
+            }
+        );
 
 
     if (response.status === 401) {
