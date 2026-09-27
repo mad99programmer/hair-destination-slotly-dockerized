@@ -10,7 +10,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Date
 )
-
+from datetime import datetime
 from sqlalchemy.sql import func
 from database import Base
 
@@ -490,3 +490,11 @@ class FlowSession(Base):
         DateTime(timezone=True),
         nullable=True
     )
+
+#table to handle dupliactes
+class ProcessedWebhookEvent(Base):
+    __tablename__ = "processed_webhook_events"
+
+    id = Column(Integer, primary_key=True)
+    event_id = Column(String(100), unique=True, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

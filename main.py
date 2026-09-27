@@ -6,6 +6,7 @@ from firebase_service import send_admin_notification
 import json
 import logging
 import base64
+from models import ProcessedWebhookEvent
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone, date, timedelta
 from fastapi import FastAPI, Request, Depends
@@ -15,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from admin_routes import router as admin_router
 from auth_routes import router as auth_router
+from fastapi import BackgroundTasks
 from models import (
     Base,
     User,
@@ -212,6 +214,61 @@ def get_db():
     finally:
         db.close()
 
+def process_zernio_event(payload):
+    db = SessionLocal()
+
+    try:
+        message = payload.get("message", {})
+        account = payload.get("account", {})
+
+        user_number = message.get("sender", {}).get("phoneNumber")
+        incoming_msg = message.get("text", "").strip()
+        conversation_id = message.get("conversationId")
+        account_id = account.get("id")
+
+        if conversation_id:
+            send_typing_indicator(
+                conversation_id,
+                account_id
+            )
+
+        process_start = time.perf_counter()
+
+        reply = process_message(
+            user_number,
+            incoming_msg,
+            conversation_id,
+            db,
+            webhook_data=payload
+        )
+
+        process_time = (
+            time.perf_counter() - process_start
+        ) * 1000
+
+        logger.info(
+            "[PROCESS] Completed | time=%.2f ms",
+            process_time
+        )
+
+        if reply is not None:
+            send_reply(
+                conversation_id,
+                account_id,
+                reply
+            )
+        else:
+            logger.info(
+                "[ZERNIO] No text reply required | Flow already sent"
+            )
+
+    except Exception:
+        logger.exception(
+            "[WEBHOOK] Background processing failed"
+        )
+
+    finally:
+        db.close()
 
 # ==========================================================
 # HEALTH CHECK
@@ -353,21 +410,28 @@ def handle_init(flow_token=""):
 # Zernio WEBHOOK
 # =========================
 @app.post("/webhook/zernio")
-async def webhook_zernio(request: Request, db: Session = Depends(get_db)):
-    webhook_start = time.perf_counter()
+async def webhook_zernio(request: Request,background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
+    
     payload = await request.json()
 
-    
-    '''
-    print("RAW PAYLOAD:")
-        print(
-            json.dumps(
-                payload,
-                indent=4,
-                ensure_ascii=False
+    event_id = payload.get("id")
+    if payload.get("event") == "message.received" and event_id:
+
+        existing_event = db.query(ProcessedWebhookEvent).filter(
+            ProcessedWebhookEvent.event_id == event_id
+        ).first()
+
+        if existing_event:
+            logger.info(
+                "[WEBHOOK] Duplicate event skipped | event_id=%s",
+                event_id
             )
+            return {"status": "duplicate, skipped"}
+
+        db.add(
+            ProcessedWebhookEvent(event_id=event_id)
         )
-    '''
+        db.commit()
     
     logger.info(
         "[WEBHOOK] Received | event=%s",
@@ -375,50 +439,9 @@ async def webhook_zernio(request: Request, db: Session = Depends(get_db)):
     )
 
     if payload.get("event") == "message.received":
-        message = payload.get("message", {})
-        account = payload.get("account", {})
-        message_id = message.get("id")
-        #if message_id and is_duplicate(message_id):
-        #    return {"status": "duplicate, skipped"}
-
-        user_number = message.get("sender", {}).get("phoneNumber")
-        incoming_msg = message.get("text", "").strip()
-        conversation_id = message.get("conversationId")
-        account_id = account.get("id")
-        if conversation_id:
-            send_typing_indicator(conversation_id,account_id)
-        process_start = time.perf_counter()
-        reply = process_message(user_number, incoming_msg, conversation_id,db,webhook_data=payload)
-        process_time = (
-            time.perf_counter() - process_start
-        ) * 1000
-
-        logger.info(
-            "[PROCESS] Completed | time=%.2f ms",
-            process_time
-        )
-        send_start = time.perf_counter()
-        print("CONVERSATION ID:", conversation_id)
-        print("ACCOUNT ID:", account_id)
-        if reply is not None:
-            send_reply(conversation_id, account_id, reply)
-        else:
-            logger.info("[ZERNIO] No text reply required | Flow already sent")
-        send_time = (
-            time.perf_counter() - send_start
-        ) * 1000
-        logger.info(
-            "[ZERNIO] Reply completed | time=%.2f ms",
-            send_time
-        )
-
-        total_time = (
-            time.perf_counter() - webhook_start
-        ) * 1000
-
-        logger.info(
-            "[WEBHOOK] Completed | total=%.2f ms",
-            total_time
+        background_tasks.add_task(
+            process_zernio_event,
+            payload
         )
 
     return {"status": "ok"}
