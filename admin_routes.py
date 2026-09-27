@@ -692,7 +692,6 @@ def create_admin_appointment(
     def normalize_phone(phone: str) -> str:
         phone = phone.strip()
 
-        # Remove spaces, hyphens, brackets etc.
         phone = (
             phone.replace(" ", "")
             .replace("-", "")
@@ -700,15 +699,16 @@ def create_admin_appointment(
             .replace(")", "")
         )
 
-        # India +91 formats
         if phone.startswith("+91"):
-            phone = phone[3:]
+            return phone
 
-        elif phone.startswith("91") and len(phone) == 12:
-            phone = phone[2:]
+        if phone.startswith("91") and len(phone) == 12:
+            return "+" + phone
+
+        if len(phone) == 10:
+            return "+91" + phone
 
         return phone
-
 
     normalized_phone = normalize_phone(phone_input)
 
