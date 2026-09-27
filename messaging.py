@@ -238,7 +238,7 @@ def send_reply(
 def send_typing_indicator(conversation_id: str, account_id: str):
     try:
         url = (
-            f"https://api.zernio.com/v1/inbox/conversations/"
+            f"https://zernio.com/v1/inbox/conversations/"
             f"{conversation_id}/typing"
         )
 
