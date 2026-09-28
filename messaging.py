@@ -233,7 +233,6 @@ def send_reply(
     )
 
     return False
-
 def send_typing_indicator(conversation_id: str, account_id: str):
     try:
         url = (
@@ -257,24 +256,34 @@ def send_typing_indicator(conversation_id: str, account_id: str):
             timeout=5
         )
 
+        logger.info(
+            "[ZERNIO] Typing RAW | status=%s | body=%r",
+            response.status_code,
+            response.text
+        )
+
         try:
             data = response.json()
         except ValueError:
-            data = {
-                "success": response.ok,
-                "raw_response": response.text
-            }
+            data = None
 
-        logger.info(
-            "[ZERNIO] Typing indicator | status=%s | success=%s | response=%s",
-            response.status_code,
-            data.get("success"),
-            data
-        )
+        if data is not None:
+            logger.info(
+                "[ZERNIO] Typing RESULT | success=%s | response=%s",
+                data.get("success"),
+                data
+            )
 
-        if not data.get("success"):
+            if not data.get("success"):
+                logger.warning(
+                    "[ZERNIO] Typing indicator was not sent | conversation=%s",
+                    conversation_id
+                )
+        else:
             logger.warning(
-                "[ZERNIO] Typing indicator was not sent | conversation=%s",
+                "[ZERNIO] Typing API returned non-JSON response | "
+                "status=%s | conversation=%s",
+                response.status_code,
                 conversation_id
             )
 
