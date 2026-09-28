@@ -218,6 +218,37 @@ def process_zernio_event(payload):
     db = SessionLocal()
 
     try:
+        # ==========================================================
+        # DEDUPLICATION
+        # ==========================================================
+        event_id = payload.get("id")
+
+        if event_id:
+            existing_event = (
+                db.query(ProcessedWebhookEvent)
+                .filter(
+                    ProcessedWebhookEvent.event_id == event_id
+                )
+                .first()
+            )
+
+            if existing_event:
+                logger.info(
+                    "[WEBHOOK] Duplicate event skipped | event_id=%s",
+                    event_id
+                )
+                return
+
+            db.add(
+                ProcessedWebhookEvent(
+                    event_id=event_id
+                )
+            )
+            db.commit()
+
+        # ==========================================================
+        # EXTRACT MESSAGE
+        # ==========================================================
         message = payload.get("message", {})
         account = payload.get("account", {})
 
@@ -226,12 +257,18 @@ def process_zernio_event(payload):
         conversation_id = message.get("conversationId")
         account_id = account.get("id")
 
+        # ==========================================================
+        # TYPING INDICATOR
+        # ==========================================================
         if conversation_id:
             send_typing_indicator(
                 conversation_id,
                 account_id
             )
 
+        # ==========================================================
+        # PROCESS MESSAGE
+        # ==========================================================
         process_start = time.perf_counter()
 
         reply = process_message(
@@ -251,6 +288,9 @@ def process_zernio_event(payload):
             process_time
         )
 
+        # ==========================================================
+        # SEND REPLY
+        # ==========================================================
         if reply is not None:
             send_reply(
                 conversation_id,
@@ -410,29 +450,12 @@ def handle_init(flow_token=""):
 # Zernio WEBHOOK
 # =========================
 @app.post("/webhook/zernio")
-async def webhook_zernio(request: Request,background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
-    
+async def webhook_zernio(
+    request: Request,
+    background_tasks: BackgroundTasks
+):
     payload = await request.json()
 
-    event_id = payload.get("id")
-    if payload.get("event") == "message.received" and event_id:
-
-        existing_event = db.query(ProcessedWebhookEvent).filter(
-            ProcessedWebhookEvent.event_id == event_id
-        ).first()
-
-        if existing_event:
-            logger.info(
-                "[WEBHOOK] Duplicate event skipped | event_id=%s",
-                event_id
-            )
-            return {"status": "duplicate, skipped"}
-
-        db.add(
-            ProcessedWebhookEvent(event_id=event_id)
-        )
-        db.commit()
-    
     logger.info(
         "[WEBHOOK] Received | event=%s",
         payload.get("event")
@@ -445,7 +468,6 @@ async def webhook_zernio(request: Request,background_tasks: BackgroundTasks,db: 
         )
 
     return {"status": "ok"}
-
 @app.post("/webhook/whatsapp-flow")
 async def whatsapp_flow(
     request: Request
