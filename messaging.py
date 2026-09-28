@@ -234,7 +234,6 @@ def send_reply(
 
     return False
 
-
 def send_typing_indicator(conversation_id: str, account_id: str):
     try:
         url = (
@@ -258,11 +257,20 @@ def send_typing_indicator(conversation_id: str, account_id: str):
             timeout=5
         )
 
+        data = response.json()
+
         logger.info(
-            "[ZERNIO] Typing indicator | status=%s | response=%s",
+            "[ZERNIO] Typing indicator | status=%s | success=%s | response=%s",
             response.status_code,
-            response.text
+            data.get("success"),
+            data
         )
+
+        if not data.get("success"):
+            logger.warning(
+                "[ZERNIO] Typing indicator was not sent | conversation=%s",
+                conversation_id
+            )
 
     except Exception:
         logger.exception("[ZERNIO] Typing indicator failed")
