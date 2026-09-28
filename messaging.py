@@ -257,7 +257,13 @@ def send_typing_indicator(conversation_id: str, account_id: str):
             timeout=5
         )
 
-        data = response.json()
+        try:
+            data = response.json()
+        except ValueError:
+            data = {
+                "success": response.ok,
+                "raw_response": response.text
+            }
 
         logger.info(
             "[ZERNIO] Typing indicator | status=%s | success=%s | response=%s",
