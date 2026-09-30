@@ -227,6 +227,11 @@ def process_zernio_event(payload):
         return
 
     message = payload.get("message", {})
+    sent_at = message.get("sentAt")
+    if sent_at:
+        sent_dt = datetime.fromisoformat(sent_at.replace("Z", "+00:00"))
+        lag = (datetime.now(timezone.utc) - sent_dt).total_seconds()
+        logger.info("[LAG] user -> my server = %.1f sec", lag)
     account = payload.get("account", {})
 
     user_number = message.get("sender", {}).get("phoneNumber")
