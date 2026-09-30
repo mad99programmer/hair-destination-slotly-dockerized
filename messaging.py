@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 logger = logging.getLogger("slotly")
+zernio_session = requests.Session()
 
 ZERNIO_API_KEY = os.getenv("ZERNIO_API_KEY")
 
@@ -132,13 +133,14 @@ def send_reply(
     for attempt in range(max_retries):
 
         try:
-
-            response = requests.post(
+            start = time.perf_counter()
+            response = zernio_session.post(
                 url,
                 headers=headers,
                 json=body,
-                timeout=30
+                timeout=(3,8)
             )
+            elapsed = (time.perf_counter() - start) * 1000
 
 
             logger.info(
@@ -199,6 +201,7 @@ def send_reply(
                 "[ZERNIO] Request timed out | attempt=%d",
                 attempt + 1
             )
+            return False
 
 
         except requests.exceptions.ConnectionError:
@@ -248,14 +251,14 @@ def send_typing_indicator(conversation_id: str, account_id: str):
         payload = {
             "accountId": account_id
         }
-
-        response = requests.post(
+        start = time.perf_counter() 
+        response = zernio_session.post(
             url,
             headers=headers,
             json=payload,
-            timeout=5
+            timeout=(2,3)
         )
-
+        elapsed = (time.perf_counter() - start) * 1000  
         logger.info(
             "[ZERNIO] Typing RAW | status=%s | body=%r",
             response.status_code,
