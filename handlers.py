@@ -17,7 +17,7 @@ from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 logger = logging.getLogger("hair-destination-slotly")
 
-
+zernio_session = requests.Session()
 # ==========================================================
 # ZERNIO CONFIG
 # ==========================================================
@@ -262,7 +262,7 @@ def send_booking_flow(
 
     try:
 
-        response = requests.post(
+        response = zernio_session.post(
 
             ZERNIO_FLOW_SEND_URL,
 
@@ -270,7 +270,7 @@ def send_booking_flow(
 
             json=payload,
 
-            timeout=30
+            timeout=(3,10)
 
         )
 
@@ -699,7 +699,7 @@ def process_message(
 
 
         #
-        send_typing_indicator(conversation_id,account_id)    
+        
         flow_sent = send_booking_flow(
             user_number=user_number,
             account_id=account_id,

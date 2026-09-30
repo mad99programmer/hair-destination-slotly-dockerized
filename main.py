@@ -214,102 +214,68 @@ def get_db():
     finally:
         db.close()
 
+from sqlalchemy.exc import IntegrityError
+
 def process_zernio_event(payload):
+    t0 = time.perf_counter()
+
+    event_id = payload.get("id")
+
+    # 1. Fast in-memory dedup (no DB hit)
+    if event_id and is_duplicate(event_id):
+        logger.info("[WEBHOOK] Duplicate skipped | event_id=%s", event_id)
+        return
+
+    message = payload.get("message", {})
+    account = payload.get("account", {})
+
+    user_number = message.get("sender", {}).get("phoneNumber")
+    incoming_msg = (message.get("text") or "").strip()
+    conversation_id = message.get("conversationId")
+    account_id = account.get("id")
+
+    # 2. Typing indicator in background, doesn't block
+    if conversation_id:
+        notification_executor.submit(
+            send_typing_indicator, conversation_id, account_id
+        )
+
     db = SessionLocal()
-
     try:
-        # ==========================================================
-        # DEDUPLICATION
-        # ==========================================================
-        event_id = payload.get("id")
-
+        # 3. DB dedup as a backstop, single round trip
         if event_id:
-            existing_event = (
-                db.query(ProcessedWebhookEvent)
-                .filter(
-                    ProcessedWebhookEvent.event_id == event_id
-                )
-                .first()
-            )
-
-            if existing_event:
-                logger.info(
-                    "[WEBHOOK] Duplicate event skipped | event_id=%s",
-                    event_id
-                )
+            try:
+                db.add(ProcessedWebhookEvent(event_id=event_id))
+                db.commit()
+            except IntegrityError:
+                db.rollback()
+                logger.info("[WEBHOOK] Duplicate (DB) | event_id=%s", event_id)
                 return
 
-            db.add(
-                ProcessedWebhookEvent(
-                    event_id=event_id
-                )
-            )
-            db.commit()
-
-        # ==========================================================
-        # EXTRACT MESSAGE
-        # ==========================================================
-        message = payload.get("message", {})
-        account = payload.get("account", {})
-
-        user_number = message.get("sender", {}).get("phoneNumber")
-        incoming_msg = message.get("text", "").strip()
-        conversation_id = message.get("conversationId")
-        account_id = account.get("id")
-
-        # ==========================================================
-        # TYPING INDICATOR
-        # ==========================================================
-        if conversation_id:
-            send_typing_indicator(
-                conversation_id,
-                account_id
-            )
-
-        # ==========================================================
-        # PROCESS MESSAGE
-        # ==========================================================
-        process_start = time.perf_counter()
+        t1 = time.perf_counter()
 
         reply = process_message(
-            user_number,
-            incoming_msg,
-            conversation_id,
-            db,
+            user_number, incoming_msg, conversation_id, db,
             webhook_data=payload
         )
 
-        process_time = (
-            time.perf_counter() - process_start
-        ) * 1000
+        t2 = time.perf_counter()
+
+        if reply is not None:
+            send_reply(conversation_id, account_id, reply)
+
+        t3 = time.perf_counter()
 
         logger.info(
-            "[PROCESS] Completed | time=%.2f ms",
-            process_time
+            "[TIMING] dedup=%.0fms | process=%.0fms | send=%.0fms | total=%.0fms",
+            (t1 - t0) * 1000, (t2 - t1) * 1000,
+            (t3 - t2) * 1000, (t3 - t0) * 1000
         )
-
-        # ==========================================================
-        # SEND REPLY
-        # ==========================================================
-        if reply is not None:
-            send_reply(
-                conversation_id,
-                account_id,
-                reply
-            )
-        else:
-            logger.info(
-                "[ZERNIO] No text reply required | Flow already sent"
-            )
 
     except Exception:
-        logger.exception(
-            "[WEBHOOK] Background processing failed"
-        )
-
+        logger.exception("[WEBHOOK] Background processing failed")
     finally:
         db.close()
-
 # ==========================================================
 # HEALTH CHECK
 # ==========================================================
